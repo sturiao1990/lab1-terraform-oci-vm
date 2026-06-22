@@ -1,0 +1,109 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: oci-credentials
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+  - stage: TerraformInit
+    displayName: 'Terraform Init & Plan'
+    jobs:
+      - job: Plan
+        steps:
+
+          - task: Bash@3
+            displayName: 'Instalar Terraform'
+            inputs:
+              targetType: inline
+              script: |
+                TERRAFORM_VERSION="1.8.5"
+                wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                unzip -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform version
+
+          - task: Bash@3
+            displayName: 'Preparar chave privada OCI'
+            inputs:
+              targetType: inline
+              script: |
+                mkdir -p ~/.oci
+                echo "$(OCI_PRIVATE_KEY)" > ~/.oci/oci_api_key.pem
+                chmod 600 ~/.oci/oci_api_key.pem
+
+          - task: Bash@3
+            displayName: 'Terraform Init'
+            inputs:
+              targetType: inline
+              script: |
+                terraform init
+
+          - task: Bash@3
+            displayName: 'Terraform Plan'
+            inputs:
+              targetType: inline
+              script: |
+                terraform plan \
+                  -var="tenancy_ocid=$(OCI_TENANCY_OCID)" \
+                  -var="user_ocid=$(OCI_USER_OCID)" \
+                  -var="fingerprint=$(OCI_FINGERPRINT)" \
+                  -var="private_key_path=$HOME/.oci/oci_api_key.pem" \
+                  -var="region=$(OCI_REGION)" \
+                  -var="compartment_ocid=$(OCI_COMPARTMENT_OCID)" \
+                  -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
+                  -out=tfplan
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: tfplan
+              artifact: tfplan
+
+  - stage: TerraformApply
+    displayName: 'Terraform Apply'
+    dependsOn: TerraformInit
+    condition: succeeded()
+    jobs:
+      - deployment: Apply
+        environment: 'producao'   # cria esse environment no Azure DevOps para exigir aprovação manual
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+
+                - task: Bash@3
+                  displayName: 'Instalar Terraform'
+                  inputs:
+                    targetType: inline
+                    script: |
+                      TERRAFORM_VERSION="1.8.5"
+                      wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                      unzip -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                      sudo mv terraform /usr/local/bin/
+
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: tfplan
+                    path: $(System.DefaultWorkingDirectory)
+
+                - task: Bash@3
+                  displayName: 'Preparar chave privada OCI'
+                  inputs:
+                    targetType: inline
+                    script: |
+                      mkdir -p ~/.oci
+                      echo "$(OCI_PRIVATE_KEY)" > ~/.oci/oci_api_key.pem
+                      chmod 600 ~/.oci/oci_api_key.pem
+
+                - task: Bash@3
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    targetType: inline
+                    script: |
+                      terraform init
+                      terraform apply -auto-approve tfplan
