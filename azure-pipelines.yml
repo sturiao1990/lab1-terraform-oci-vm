@@ -11,14 +11,10 @@ pool:
 
 stages:
 
-  # ============================================================
-  # STAGE 1 - INIT E PLAN
-  # ============================================================
   - stage: TerraformPlan
-    displayName: 'Terraform Init & Plan'
+    displayName: 'Terraform Init e Plan'
     jobs:
       - job: Plan
-        displayName: 'Executar Init e Plan'
         steps:
 
           - task: Bash@3
@@ -33,75 +29,66 @@ stages:
                 terraform version
 
           - task: Bash@3
-            displayName: 'Preparar chave privada da API OCI (andresturiao.pem)'
+            displayName: 'Preparar chave API OCI (andresturiao.pem)'
             inputs:
               targetType: inline
               script: |
                 mkdir -p ~/.oci
-                # O conteúdo do .pem vem da variável secreta cadastrada no Variable Group
-                echo "$(OCI_PRIVATE_KEY_CONTENT)" > ~/.oci/andresturiao.pem
+                echo "$(OCI_PRIVATE_KEY)" > ~/.oci/andresturiao.pem
                 chmod 600 ~/.oci/andresturiao.pem
-                echo "Chave API OCI salva em ~/.oci/andresturiao.pem"
+                echo "Chave API gravada em ~/.oci/andresturiao.pem"
 
           - task: Bash@3
-            displayName: 'Preparar chave SSH pública para a VM'
+            displayName: 'Preparar chave SSH pública para as VMs OCI'
             inputs:
               targetType: inline
               script: |
                 mkdir -p ~/.ssh
-                echo "$(OCI_SSH_PUBLIC_KEY)" > ~/.ssh/lab-publica-ssh.pub
+                echo "$(SSH_PUBLIC_KEY)" > ~/.ssh/lab-publica-ssh.pub
                 chmod 644 ~/.ssh/lab-publica-ssh.pub
-                echo "Chave SSH pública salva em ~/.ssh/lab-publica-ssh.pub"
+                echo "Chave SSH pública gravada em ~/.ssh/lab-publica-ssh.pub"
 
           - task: Bash@3
             displayName: 'Terraform Init'
             inputs:
               targetType: inline
               script: |
-                cd $(System.DefaultWorkingDirectory)
                 terraform init
             env:
-              TF_VAR_tenancy_ocid: $(OCI_TENANCY_OCID)
-              TF_VAR_user_ocid: $(OCI_USER_OCID)
-              TF_VAR_fingerprint: $(OCI_FINGERPRINT)
-              TF_VAR_region: $(OCI_REGION)
-              TF_VAR_compartment_ocid: $(OCI_COMPARTMENT_OCID)
-              TF_VAR_private_key_path: /root/.oci/andresturiao.pem
-              TF_VAR_ssh_public_key: $(OCI_SSH_PUBLIC_KEY)
+              TF_VAR_tenancy_ocid: "ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca"
+              TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
+              TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
+              TF_VAR_region: "sa-saopaulo-1"
+              TF_VAR_private_key_path: "/root/.oci/andresturiao.pem"
+              TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
 
           - task: Bash@3
             displayName: 'Terraform Plan'
             inputs:
               targetType: inline
               script: |
-                cd $(System.DefaultWorkingDirectory)
                 terraform plan \
-                  -var="tenancy_ocid=$(OCI_TENANCY_OCID)" \
-                  -var="user_ocid=$(OCI_USER_OCID)" \
-                  -var="fingerprint=$(OCI_FINGERPRINT)" \
+                  -var="tenancy_ocid=ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca" \
+                  -var="user_ocid=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q" \
+                  -var="fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4" \
+                  -var="region=sa-saopaulo-1" \
                   -var="private_key_path=$HOME/.oci/andresturiao.pem" \
-                  -var="region=$(OCI_REGION)" \
-                  -var="compartment_ocid=$(OCI_COMPARTMENT_OCID)" \
-                  -var="ssh_public_key=$(OCI_SSH_PUBLIC_KEY)" \
+                  -var="compartment_ocid=ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq" \
+                  -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
                   -out=tfplan
-                echo "Plan concluído com sucesso"
 
           - task: PublishPipelineArtifact@1
-            displayName: 'Publicar artefato do Plan'
+            displayName: 'Publicar plano como artefato'
             inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/tfplan'
+              targetPath: tfplan
               artifact: tfplan
 
-  # ============================================================
-  # STAGE 2 - APPLY (aguarda aprovação manual)
-  # ============================================================
   - stage: TerraformApply
     displayName: 'Terraform Apply'
     dependsOn: TerraformPlan
     condition: succeeded()
     jobs:
       - deployment: Apply
-        displayName: 'Aplicar infraestrutura na OCI'
         environment: 'producao'
         strategy:
           runOnce:
@@ -120,41 +107,37 @@ stages:
                       terraform version
 
                 - task: Bash@3
-                  displayName: 'Restaurar chave privada da API OCI'
+                  displayName: 'Preparar chave API OCI (andresturiao.pem)'
                   inputs:
                     targetType: inline
                     script: |
                       mkdir -p ~/.oci
-                      echo "$(OCI_PRIVATE_KEY_CONTENT)" > ~/.oci/andresturiao.pem
+                      echo "$(OCI_PRIVATE_KEY)" > ~/.oci/andresturiao.pem
                       chmod 600 ~/.oci/andresturiao.pem
 
                 - task: DownloadPipelineArtifact@2
-                  displayName: 'Baixar artefato do Plan'
+                  displayName: 'Baixar plano gerado no stage anterior'
                   inputs:
                     artifact: tfplan
                     path: $(System.DefaultWorkingDirectory)
 
                 - task: Bash@3
-                  displayName: 'Terraform Init'
+                  displayName: 'Terraform Init (Apply stage)'
                   inputs:
                     targetType: inline
                     script: |
-                      cd $(System.DefaultWorkingDirectory)
-                      terraform init \
-                        -var="tenancy_ocid=$(OCI_TENANCY_OCID)" \
-                        -var="user_ocid=$(OCI_USER_OCID)" \
-                        -var="fingerprint=$(OCI_FINGERPRINT)" \
-                        -var="private_key_path=$HOME/.oci/andresturiao.pem" \
-                        -var="region=$(OCI_REGION)" \
-                        -var="compartment_ocid=$(OCI_COMPARTMENT_OCID)" \
-                        -var="ssh_public_key=$(OCI_SSH_PUBLIC_KEY)"
+                      terraform init
+                  env:
+                    TF_VAR_tenancy_ocid: "ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca"
+                    TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
+                    TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
+                    TF_VAR_region: "sa-saopaulo-1"
+                    TF_VAR_private_key_path: "/root/.oci/andresturiao.pem"
+                    TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
 
                 - task: Bash@3
                   displayName: 'Terraform Apply'
                   inputs:
                     targetType: inline
                     script: |
-                      cd $(System.DefaultWorkingDirectory)
                       terraform apply -auto-approve tfplan
-                      echo "VM criada com sucesso na OCI - região sa-saopaulo-1"
-                      echo "Compartment: lab_terraform_pipeline_azure"
