@@ -34,12 +34,19 @@ stages:
               targetType: inline
               script: |
                 mkdir -p $HOME/.oci
-                # printf preserva as quebras de linha do PEM corretamente
-                printf '%s' "$(OCI_PRIVATE_KEY)" > $HOME/.oci/andresturiao.pem
+                echo "$(OCI_PRIVATE_KEY)" | base64 --decode > $HOME/.oci/andresturiao.pem
                 chmod 600 $HOME/.oci/andresturiao.pem
-                echo "Chave gravada em $HOME/.oci/andresturiao.pem"
-                # Valida que o arquivo nao esta vazio
-                wc -l $HOME/.oci/andresturiao.pem
+                echo "Chave gravada com $(wc -l < $HOME/.oci/andresturiao.pem) linhas"
+
+          - task: Bash@3
+            displayName: 'Preparar chave SSH pública para as VMs OCI'
+            inputs:
+              targetType: inline
+              script: |
+                mkdir -p $HOME/.ssh
+                echo "$(SSH_PUBLIC_KEY)" > $HOME/.ssh/lab-publica-ssh.pub
+                chmod 644 $HOME/.ssh/lab-publica-ssh.pub
+                echo "Chave SSH pública gravada em $HOME/.ssh/lab-publica-ssh.pub"
 
           - task: Bash@3
             displayName: 'Terraform Init'
@@ -53,7 +60,7 @@ stages:
               TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
               TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
               TF_VAR_region: "sa-saopaulo-1"
-              TF_VAR_private_key_path: "$(HOME)/.oci/andresturiao.pem"
+              TF_VAR_private_key_path: "$HOME/.oci/andresturiao.pem"
               TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
               TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
 
@@ -108,8 +115,9 @@ stages:
                     targetType: inline
                     script: |
                       mkdir -p $HOME/.oci
-                      printf '%s' "$(OCI_PRIVATE_KEY)" > $HOME/.oci/andresturiao.pem
+                      echo "$(OCI_PRIVATE_KEY)" | base64 --decode > $HOME/.oci/andresturiao.pem
                       chmod 600 $HOME/.oci/andresturiao.pem
+                      echo "Chave gravada com $(wc -l < $HOME/.oci/andresturiao.pem) linhas"
 
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Baixar plano gerado no stage anterior'
@@ -129,7 +137,7 @@ stages:
                     TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
                     TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
                     TF_VAR_region: "sa-saopaulo-1"
-                    TF_VAR_private_key_path: "$(HOME)/.oci/andresturiao.pem"
+                    TF_VAR_private_key_path: "$HOME/.oci/andresturiao.pem"
                     TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
                     TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
 
