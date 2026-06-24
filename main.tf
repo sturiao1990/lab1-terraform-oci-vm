@@ -58,7 +58,7 @@ resource "oci_core_security_list" "sl_lab" {
   display_name   = "sl-lab-terraform"
 
   ingress_security_rules {
-    protocol  = "6" # TCP
+    protocol  = "6"
     source    = "0.0.0.0/0"
     stateless = false
 
@@ -69,7 +69,7 @@ resource "oci_core_security_list" "sl_lab" {
   }
 
   ingress_security_rules {
-    protocol  = "1" # ICMP
+    protocol  = "1"
     source    = "0.0.0.0/0"
     stateless = false
   }
@@ -95,7 +95,7 @@ resource "oci_core_subnet" "subnet_lab" {
 }
 
 # ============================================================
-# Busca o Availability Domain disponível
+# Busca todos os Availability Domains disponíveis
 # ============================================================
 data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
@@ -114,10 +114,10 @@ data "oci_core_images" "oracle_linux" {
 }
 
 # ============================================================
-# VM
+# VM — tenta o AD index definido pela variável ad_index
 # ============================================================
 resource "oci_core_instance" "vm_lab" {
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[var.ad_index].name
   compartment_id      = var.compartment_ocid
   display_name        = "vm-lab-terraform"
   shape               = "VM.Standard.E4.Flex"

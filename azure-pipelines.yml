@@ -85,14 +85,15 @@ stages:
               script: |
                 cd $(System.DefaultWorkingDirectory)
                 terraform plan \
-                  -var="tenancy_ocid=ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca" \
-                  -var="user_ocid=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q" \
-                  -var="fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4" \
-                  -var="region=sa-saopaulo-1" \
-                  -var="private_key_path=/home/vsts/.oci/andresturiao.pem" \
-                  -var="compartment_ocid=ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq" \
-                  -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
-                  -out=tfplan
+                -var="tenancy_ocid=ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca" \
+                -var="user_ocid=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q" \
+                -var="fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4" \
+                -var="region=sa-saopaulo-1" \
+                -var="private_key_path=/home/vsts/.oci/andresturiao.pem" \
+                -var="compartment_ocid=ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq" \
+                -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
+                -var="ad_index=1" \
+                -out=tfplan
 
           - task: Bash@3
             displayName: 'Empacotar artefatos do Terraform'
