@@ -92,7 +92,6 @@ stages:
                 -var="private_key_path=/home/vsts/.oci/andresturiao.pem" \
                 -var="compartment_ocid=ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq" \
                 -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
-                -var="ad_index=1" \
                 -out=tfplan
 
           - task: Bash@3

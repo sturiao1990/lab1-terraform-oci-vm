@@ -108,7 +108,7 @@ data "oci_core_images" "oracle_linux" {
   compartment_id           = var.compartment_ocid
   operating_system         = "Oracle Linux"
   operating_system_version = "8"
-  shape                    = "VM.Standard.E4.Flex"
+  shape                    = "VM.Standard.E3.Flex"
   sort_by                  = "TIMECREATED"
   sort_order               = "DESC"
 }
@@ -120,7 +120,7 @@ resource "oci_core_instance" "vm_lab" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[var.ad_index].name
   compartment_id      = var.compartment_ocid
   display_name        = "vm-lab-terraform"
-  shape               = "VM.Standard.E4.Flex"
+  shape               = "VM.Standard.E3.Flex"
 
   shape_config {
     ocpus         = 1
