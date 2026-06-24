@@ -39,6 +39,21 @@ stages:
                 chmod 600 $HOME/.oci/andresturiao.pem
 
           - task: Bash@3
+            displayName: 'Criar arquivo config OCI'
+            inputs:
+              targetType: inline
+              script: |
+                cat > $HOME/.oci/config << EOF
+                [DEFAULT]
+                user=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q
+                fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4
+                tenancy=ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca
+                region=sa-saopaulo-1
+                key_file=/home/vsts/.oci/andresturiao.pem
+                EOF
+                chmod 600 $HOME/.oci/config
+
+          - task: Bash@3
             displayName: 'Preparar chave SSH pública para as VMs OCI'
             inputs:
               targetType: inline
@@ -60,7 +75,7 @@ stages:
               TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
               TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
               TF_VAR_region: "sa-saopaulo-1"
-              TF_VAR_private_key_path: "$HOME/.oci/andresturiao.pem"
+              TF_VAR_private_key_path: "/home/vsts/.oci/andresturiao.pem"
               TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
               TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
 
@@ -75,7 +90,7 @@ stages:
                   -var="user_ocid=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q" \
                   -var="fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4" \
                   -var="region=sa-saopaulo-1" \
-                  -var="private_key_path=$HOME/.oci/andresturiao.pem" \
+                  -var="private_key_path=/home/vsts/.oci/andresturiao.pem" \
                   -var="compartment_ocid=ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq" \
                   -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
                   -out=tfplan
@@ -119,6 +134,21 @@ stages:
                       echo "" >> $HOME/.oci/andresturiao.pem
                       chmod 600 $HOME/.oci/andresturiao.pem
 
+                - task: Bash@3
+                  displayName: 'Criar arquivo config OCI'
+                  inputs:
+                    targetType: inline
+                    script: |
+                      cat > $HOME/.oci/config << EOF
+                      [DEFAULT]
+                      user=ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q
+                      fingerprint=ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4
+                      tenancy=ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca
+                      region=sa-saopaulo-1
+                      key_file=/home/vsts/.oci/andresturiao.pem
+                      EOF
+                      chmod 600 $HOME/.oci/config
+
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Baixar plano gerado no stage anterior'
                   inputs:
@@ -137,7 +167,7 @@ stages:
                     TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
                     TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
                     TF_VAR_region: "sa-saopaulo-1"
-                    TF_VAR_private_key_path: "$HOME/.oci/andresturiao.pem"
+                    TF_VAR_private_key_path: "/home/vsts/.oci/andresturiao.pem"
                     TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
                     TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
 
