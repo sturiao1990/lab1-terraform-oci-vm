@@ -35,21 +35,8 @@ stages:
               script: |
                 mkdir -p $HOME/.oci
                 echo "$(OCI_PRIVATE_KEY)" | base64 --decode > $HOME/.oci/andresturiao.pem
+                echo "" >> $HOME/.oci/andresturiao.pem
                 chmod 600 $HOME/.oci/andresturiao.pem
-
-          - task: Bash@3
-            displayName: 'Diagnostico chave PEM'
-            inputs:
-              targetType: inline
-              script: |
-                echo "=== Primeiras 3 linhas do PEM ==="
-                head -3 $HOME/.oci/andresturiao.pem
-                echo "=== Ultimas 2 linhas do PEM ==="
-                tail -2 $HOME/.oci/andresturiao.pem
-                echo "=== Total de linhas ==="
-                wc -l $HOME/.oci/andresturiao.pem
-                echo "=== Total de bytes ==="
-                wc -c $HOME/.oci/andresturiao.pem
 
           - task: Bash@3
             displayName: 'Preparar chave SSH pública para as VMs OCI'
@@ -129,21 +116,8 @@ stages:
                     script: |
                       mkdir -p $HOME/.oci
                       echo "$(OCI_PRIVATE_KEY)" | base64 --decode > $HOME/.oci/andresturiao.pem
+                      echo "" >> $HOME/.oci/andresturiao.pem
                       chmod 600 $HOME/.oci/andresturiao.pem
-
-                - task: Bash@3
-                  displayName: 'Diagnostico chave PEM (Apply stage)'
-                  inputs:
-                    targetType: inline
-                    script: |
-                      echo "=== Primeiras 3 linhas do PEM ==="
-                      head -3 $HOME/.oci/andresturiao.pem
-                      echo "=== Ultimas 2 linhas do PEM ==="
-                      tail -2 $HOME/.oci/andresturiao.pem
-                      echo "=== Total de linhas ==="
-                      wc -l $HOME/.oci/andresturiao.pem
-                      echo "=== Total de bytes ==="
-                      wc -c $HOME/.oci/andresturiao.pem
 
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Baixar plano gerado no stage anterior'
