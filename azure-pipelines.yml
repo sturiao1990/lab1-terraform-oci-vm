@@ -61,7 +61,6 @@ stages:
                 mkdir -p $HOME/.ssh
                 echo "$(SSH_PUBLIC_KEY)" > $HOME/.ssh/lab-publica-ssh.pub
                 chmod 644 $HOME/.ssh/lab-publica-ssh.pub
-                echo "Chave SSH pública gravada em $HOME/.ssh/lab-publica-ssh.pub"
 
           - task: Bash@3
             displayName: 'Terraform Init'
@@ -95,11 +94,19 @@ stages:
                   -var="ssh_public_key=$(SSH_PUBLIC_KEY)" \
                   -out=tfplan
 
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publicar plano como artefato'
+          - task: Bash@3
+            displayName: 'Empacotar artefatos do Terraform'
             inputs:
-              targetPath: $(System.DefaultWorkingDirectory)/tfplan
-              artifact: tfplan
+              targetType: inline
+              script: |
+                cd $(System.DefaultWorkingDirectory)
+                tar -czf terraform-artifacts.tar.gz .terraform .terraform.lock.hcl tfplan
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar artefatos como artefato'
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/terraform-artifacts.tar.gz
+              artifact: terraform-artifacts
 
   - stage: TerraformApply
     displayName: 'Terraform Apply'
@@ -150,26 +157,18 @@ stages:
                       chmod 600 $HOME/.oci/config
 
                 - task: DownloadPipelineArtifact@2
-                  displayName: 'Baixar plano gerado no stage anterior'
+                  displayName: 'Baixar artefatos do Terraform'
                   inputs:
-                    artifact: tfplan
+                    artifact: terraform-artifacts
                     path: $(System.DefaultWorkingDirectory)
 
                 - task: Bash@3
-                  displayName: 'Terraform Init (Apply stage)'
+                  displayName: 'Desempacotar artefatos do Terraform'
                   inputs:
                     targetType: inline
                     script: |
                       cd $(System.DefaultWorkingDirectory)
-                      terraform init
-                  env:
-                    TF_VAR_tenancy_ocid: "ocid1.tenancy.oc1..aaaaaaaaodd3t7hz4s5yhetwpuxvtapql6lpwk7dlburghe4oh43txzzifca"
-                    TF_VAR_user_ocid: "ocid1.user.oc1..aaaaaaaa5maiqfswx3teiqvwwfhuypistgjmzlcvkeiyea3c3m6tjizrkf7q"
-                    TF_VAR_fingerprint: "ee:33:63:de:a0:c9:67:92:0c:76:24:c7:da:09:b9:d4"
-                    TF_VAR_region: "sa-saopaulo-1"
-                    TF_VAR_private_key_path: "/home/vsts/.oci/andresturiao.pem"
-                    TF_VAR_compartment_ocid: "ocid1.compartment.oc1..aaaaaaaalvgmrw7onqcawfva4odcscuc3mmbrvjdi4t3kdcmmccefuubhfaq"
-                    TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
+                      tar -xzf terraform-artifacts.tar.gz
 
                 - task: Bash@3
                   displayName: 'Terraform Apply'
