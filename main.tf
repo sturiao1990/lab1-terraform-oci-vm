@@ -117,7 +117,7 @@ data "oci_core_images" "oracle_linux" {
 # VM — tenta o AD index definido pela variável ad_index
 # ============================================================
 resource "oci_core_instance" "vm_lab" {
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[var.ad_index].name
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_ocid
   display_name        = "vm-lab-terraform"
   shape               = "VM.Standard.E3.Flex"
